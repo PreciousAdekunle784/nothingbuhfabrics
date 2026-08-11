@@ -276,7 +276,7 @@ input,select,textarea{font-family:inherit}
 .mini-btn{font-family:var(--f-util);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;padding:7px 12px;border:1px solid var(--line);transition:.25s}
 .mini-btn:hover{background:var(--charcoal);color:var(--ivory);border-color:var(--charcoal)}
 .mini-btn.danger:hover{background:var(--wine);border-color:var(--wine)}
-.swatch-cell{width:44px;height:54px;flex-shrink:0}
+.swatch-cell{position:relative;width:44px;height:54px;flex-shrink:0}
 .toggle{width:44px;height:24px;border-radius:14px;background:var(--taupe);position:relative;transition:.3s;flex-shrink:0}
 .toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.3s}
 .toggle.on{background:var(--green)}.toggle.on::after{left:23px}
