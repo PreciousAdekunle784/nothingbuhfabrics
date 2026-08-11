@@ -79,7 +79,7 @@ async function count(t){ try{ var r=await sb.from(t).select("id",{count:"exact",
 async function products(){
   var r=await sb.from("products").select("*,categories(name),collections(name),product_images(url,sort)").order("created_at",{ascending:false});
   var list=r.data||[];
-  list.forEach(function(p){ if(p.product_images) p.product_images.sort(function(a,b){return (a.sort||0)-(b.sort||0);}); });
+  list.forEach(function(p){ if(p.product_images && Array.isArray(p.product_images)) p.product_images.sort(function(a,b){return (a.sort||0)-(b.sort||0);}); });
   root.innerHTML='<h1>Products</h1><p class="lead">Add, edit, price, stock and flag products.</p>'+
     '<div class="panel"><div class="panel-head"><h3>'+list.length+' Products</h3><button class="btn btn-dark" id="addProd" style="padding:11px 22px">+ Add Product</button></div>'+
     '<div style="overflow-x:auto">'+table(["","Name","Price","Stock","Flags","Active",""],
@@ -93,7 +93,7 @@ async function products(){
         '<button class="mini-btn" data-edit="'+p.id+'">Edit</button> <button class="mini-btn danger" data-del="'+p.id+'">Delete</button>'
       ]; }))+'</div></div>';
   $("addProd").onclick=function(){ productForm(null); };
-  root.querySelectorAll("[data-edit]").forEach(function(b){ b.onclick=function(){ productForm(list.filter(function(x){return x.id===b.getAttribute("data-edit");})[0]); }; });
+  root.querySelectorAll("[data-edit]").forEach(function(b){ b.onclick=function(){ productForm(list.filter(function(x){return String(x.id)===String(b.getAttribute("data-edit"));})[0]); }; });
   root.querySelectorAll("[data-del]").forEach(function(b){ b.onclick=async function(){ if(!confirm("Delete this product?"))return; var res=await sb.from("products").delete().eq("id",b.getAttribute("data-del")); if(saveErr(null,res))return; products(); }; });
 }
 function flags(p){ var f=[]; if(p.featured)f.push("Featured"); if(p.best_seller)f.push("Best"); if(p.new_arrival)f.push("New"); return f.length?f.map(function(x){return '<span class="pill processing" style="margin:1px">'+x+'</span>';}).join(" "):"\u2014"; }
