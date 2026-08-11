@@ -10,14 +10,14 @@
    so you can preview every page.
    ========================================================= */
 window.NBF_CONFIG = {
-  SUPABASE_URL: "https://wykiogugozbvpqxtaubu.supabase.co",     // e.g. https://xxxx.supabase.co
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5a2lvZ3Vnb3pidnBxeHRhdWJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0Njk1MTYsImV4cCI6MjEwMjA0NTUxNn0.z9MPKWOVrZQxGPfZG50rfsLruFcynn8xmqz3ghlmtwM",
-  WA_NUMBER: "2348000000000",        // WhatsApp, digits only, incl. country code
-  CURRENCY: "\u20a6",               // Naira sign
-  DELIVERY_LAGOS: 2500,                    // flat Lagos delivery fee (demo)
-  DELIVERY_NATION: 5000,                    // flat nationwide delivery fee (demo)
-  BRAND: "Nothingbuh Fabrics",
-  IG_HANDLE: "@nothingbuhfabrics"
+  SUPABASE_URL:      "YOUR_PROJECT_URL",     // e.g. https://xxxx.supabase.co
+  SUPABASE_ANON_KEY: "YOUR_ANON_KEY",
+  WA_NUMBER:         "2348000000000",        // WhatsApp, digits only, incl. country code
+  CURRENCY:          "\u20a6",               // Naira sign
+  DELIVERY_LAGOS:    2500,                    // flat Lagos delivery fee (demo)
+  DELIVERY_NATION:   5000,                    // flat nationwide delivery fee (demo)
+  BRAND:             "Nothingbuh Fabrics",
+  IG_HANDLE:         "@nothingbuhfabrics"
 };
 
 /* ---- client bootstrap (don't edit below) ---- */

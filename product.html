@@ -47,7 +47,9 @@ function price(p){ return p.sale_price ? '<del>'+NBF.money(p.price)+'</del>'+NBF
 function render(p){
   var out = p.stock_quantity<=0;
   var swMain = p.swatch && p.swatch.indexOf("fab-")!==0 ? 'class="swatch img" style="background-image:url('+p.swatch+')"' : 'class="swatch '+(p.swatch||"fab-brocade")+'"';
-  var gallery = [p.swatch, p.alt].concat(p.images||[]).filter(Boolean);
+  var gallery = (p.images && p.images.length) ? p.images.slice() : [p.swatch, p.alt].filter(Boolean);
+  gallery = gallery.filter(function(v,i){ return v && gallery.indexOf(v)===i; });
+  if(!gallery.length) gallery=[p.swatch||"fab-brocade"];
   document.getElementById("sbPrice").innerHTML = price(p);
   document.getElementById("sbAdd").onclick=function(){ NBF.Cart.add(p, QTY); };
   document.getElementById("pdpRoot").innerHTML =

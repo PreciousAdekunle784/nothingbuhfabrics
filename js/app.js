@@ -44,13 +44,15 @@ function p(name,slug,type,sw,alt,price,sale,cat,col,stock,feat,best,newa,desc){
 /* ---------- data layer ---------- */
 function swBg(v){ return (v && v.indexOf("fab-")!==0) ? 'style="background-image:url('+v+')" class="swatch img"' : 'class="swatch '+(v||"fab-brocade")+'"'; }
 function normalize(row){
-  return { name:row.name, slug:row.slug, fabric_type:row.fabric_type, swatch:row.swatch,
-    alt:(row.product_images&&row.product_images[1]?row.product_images[1].url:row.swatch),
+  var imgs=(row.product_images||[]).map(function(i){return i.url;});
+  var main = imgs.length ? imgs[0] : row.swatch;
+  return { name:row.name, slug:row.slug, fabric_type:row.fabric_type, swatch:main,
+    alt:(imgs.length>1 ? imgs[1] : main),
     price:Number(row.price), sale_price:row.sale_price?Number(row.sale_price):null,
     category:row.category_slug||"", collection:row.collection_slug||"", stock_quantity:row.stock_quantity,
     featured:row.featured, best_seller:row.best_seller, new_arrival:row.new_arrival,
     description:row.description, colors:row.colors&&row.colors.length?row.colors:["#c6a35b","#5a2b34","#1a1613"],
-    images:(row.product_images||[]).map(function(i){return i.url;}), unit:row.unit };
+    images:imgs, unit:row.unit };
 }
 var DATA = {
   products: async function () {
@@ -264,6 +266,14 @@ async function initAnniversary(){
     s.addEventListener("click",function(e){ if(e.target===s) NBF.closeAnniv(); }); } }, 650);
 }
 
+async function initHero(){
+  var hero=document.querySelector(".hero .swatch"); if(!hero || !sb) return;
+  try{ var r=await sb.from("site_settings").select("value").eq("key","hero").single();
+    if(!r.error && r.data && r.data.value && r.data.value.image){
+      hero.className="swatch img"; hero.style.backgroundImage="url("+r.data.value.image+")"; }
+  }catch(e){}
+}
+
 /* ---------- render helpers ---------- */
 function badges(pr){
   var h="";
@@ -358,7 +368,7 @@ function onScroll(){ var nav=document.getElementById("nav"); if(!nav)return;
 
 /* ---------- boot ---------- */
 document.addEventListener("DOMContentLoaded", function(){
-  buildChrome(); sync(); initAnnounce(); initAnniversary();
+  buildChrome(); sync(); initAnnounce(); initAnniversary(); initHero();
   window.addEventListener("scroll", onScroll, {passive:true}); onScroll();
   document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ NBF.drawer(0); NBF.closeQuick(); NBF.mob(0); NBF.closeAnniv(); }});
   var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add("in");io.unobserve(x.target);}});},{threshold:.12});

@@ -7,6 +7,22 @@ var $ = function(id){ return document.getElementById(id); };
 var root, cats=[], cols=[], SLUG=function(s){return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");};
 var STATUSES=["pending","confirmed","processing","shipped","delivered","cancelled"];
 
+// surface Supabase write errors instead of silently swallowing them
+function saveErr(box,res){
+  if(res && res.error){ var m=res.error.message||"Save failed";
+    if(/row-level security|permission/i.test(m)) m="Permission denied — your account isn't an admin yet. Run the promote SQL from the admin home, then refresh.";
+    if(box){ box.innerHTML='<div class="msg err">'+m+'</div>'; } else { alert(m); }
+    return true; }
+  return false;
+}
+async function uploadTo(folder,file){
+  var path=folder+"/"+Date.now()+"-"+file.name.replace(/[^a-zA-Z0-9.]/g,"_");
+  var up=await sb.storage.from("product-images").upload(path,file,{upsert:true});
+  if(up.error) return {error:up.error.message};
+  return { url:sb.storage.from("product-images").getPublicUrl(path).data.publicUrl, path:path };
+}
+async function removeStoragePath(p){ if(p){ try{ await sb.storage.from("product-images").remove([p]); }catch(e){} } }
+
 document.addEventListener("DOMContentLoaded", guard);
 
 async function guard(){
@@ -61,13 +77,14 @@ async function count(t){ try{ var r=await sb.from(t).select("id",{count:"exact",
 
 /* ---------- PRODUCTS ---------- */
 async function products(){
-  var r=await sb.from("products").select("*,categories(name),collections(name)").order("created_at",{ascending:false});
+  var r=await sb.from("products").select("*,categories(name),collections(name),product_images(url,sort)").order("created_at",{ascending:false});
   var list=r.data||[];
+  list.forEach(function(p){ if(p.product_images) p.product_images.sort(function(a,b){return (a.sort||0)-(b.sort||0);}); });
   root.innerHTML='<h1>Products</h1><p class="lead">Add, edit, price, stock and flag products.</p>'+
     '<div class="panel"><div class="panel-head"><h3>'+list.length+' Products</h3><button class="btn btn-dark" id="addProd" style="padding:11px 22px">+ Add Product</button></div>'+
     '<div style="overflow-x:auto">'+table(["","Name","Price","Stock","Flags","Active",""],
-      list.map(function(p){ return [
-        '<div class="swatch-cell '+(p.swatch&&p.swatch.indexOf("fab-")===0?p.swatch:"")+'"'+(p.swatch&&p.swatch.indexOf("fab-")!==0?' style="background:url('+p.swatch+') center/cover"':"")+'></div>',
+      list.map(function(p){ var main=(p.product_images&&p.product_images[0])?p.product_images[0].url:p.swatch; return [
+        '<div class="swatch-cell '+(main&&main.indexOf("fab-")===0?main:"")+'"'+(main&&main.indexOf("fab-")!==0?' style="background:url('+main+') center/cover"':"")+'></div>',
         '<b>'+p.name+'</b><br><span style="color:var(--taupe-deep);font-size:.78rem">'+(p.categories?p.categories.name:"\u2014")+'</span>',
         p.sale_price? '<del style="color:var(--taupe)">'+money(p.price)+'</del> '+money(p.sale_price) : money(p.price),
         p.stock_quantity>0? p.stock_quantity : '<span class="pill out">Out</span>',
@@ -77,7 +94,7 @@ async function products(){
       ]; }))+'</div></div>';
   $("addProd").onclick=function(){ productForm(null); };
   root.querySelectorAll("[data-edit]").forEach(function(b){ b.onclick=function(){ productForm(list.filter(function(x){return x.id===b.getAttribute("data-edit");})[0]); }; });
-  root.querySelectorAll("[data-del]").forEach(function(b){ b.onclick=async function(){ if(!confirm("Delete this product?"))return; await sb.from("products").delete().eq("id",b.getAttribute("data-del")); products(); }; });
+  root.querySelectorAll("[data-del]").forEach(function(b){ b.onclick=async function(){ if(!confirm("Delete this product?"))return; var res=await sb.from("products").delete().eq("id",b.getAttribute("data-del")); if(saveErr(null,res))return; products(); }; });
 }
 function flags(p){ var f=[]; if(p.featured)f.push("Featured"); if(p.best_seller)f.push("Best"); if(p.new_arrival)f.push("New"); return f.length?f.map(function(x){return '<span class="pill processing" style="margin:1px">'+x+'</span>';}).join(" "):"\u2014"; }
 
@@ -92,10 +109,10 @@ function productForm(p){
       '<div class="field"><label>Collection</label><select name="collection_id">'+opt(cols,p.collection_id)+'</select></div></div>'+
     '<div class="field-row">'+field("Fabric type","fabric_type","text",p.fabric_type||"")+field("Stock qty","stock_quantity","number",p.stock_quantity||0)+'</div>'+
     '<div class="field"><label>Description</label><textarea name="description" rows="3">'+(p.description||"")+'</textarea></div>'+
-    '<div class="field"><label>Swatch class or image URL</label><input name="swatch" value="'+(p.swatch||"fab-brocade")+'"></div>'+
+    '<div class="field"><label>Main image (upload photos below, or paste an image URL / leave a fabric texture like fab-brocade)</label><input name="swatch" value="'+(p.swatch||"fab-brocade")+'"></div>'+
     '<div class="field"><label>Flags</label><div style="display:flex;gap:16px;flex-wrap:wrap;font-family:var(--f-util);font-size:.8rem">'+
       chk("featured","Featured",p.featured)+chk("best_seller","Best Seller",p.best_seller)+chk("new_arrival","New Arrival",p.new_arrival)+chk("active","Live",p.active!==false)+'</div></div>'+
-    (p.id? '<div class="field"><label>Product images (Supabase Storage)</label><input type="file" id="pimg" accept="image/*" multiple><div id="imgList" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div></div>':"")+
+    (p.id? '<div class="field"><label>Product photos &mdash; the first one is the picture customers see</label><input type="file" id="pimg" accept="image/*" multiple><div id="imgList" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div><div id="imgMsg"></div></div>':'<p style="font-family:var(--f-util);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--taupe-deep);margin:-6px 0 14px">Create the product first, then re-open it to upload photos.</p>')+
     '<div id="pfMsg"></div>'+
     '<button type="submit" class="btn btn-dark btn-block">'+(p.id?"Save Changes":"Create Product")+'</button></form>');
   if(p.id) loadImages(p.id);
@@ -106,13 +123,29 @@ function productForm(p){
       description:f.description.value, swatch:f.swatch.value.trim(),
       featured:f.featured.checked, best_seller:f.best_seller.checked, new_arrival:f.new_arrival.checked, active:f.active.checked,
       updated_at:new Date().toISOString() };
-    try{ if(p.id){ await sb.from("products").update(data).eq("id",p.id); } else { await sb.from("products").insert(data); }
-      closeModal(); products(); }catch(err){ box.innerHTML='<div class="msg err">'+err.message+'</div>'; };
-    return false; };
-  if(p.id){ var fi=$("pimg"); fi.onchange=async function(){ for(var i=0;i<fi.files.length;i++){ await uploadImage(p.id, fi.files[i]); } loadImages(p.id); }; }
+    var btn=f.querySelector("button[type=submit]"); btn.disabled=true; btn.textContent="Saving\u2026";
+    var res = p.id ? await sb.from("products").update(data).eq("id",p.id) : await sb.from("products").insert(data);
+    btn.disabled=false; btn.textContent=p.id?"Save Changes":"Create Product";
+    if(saveErr(box,res)) return false;
+    closeModal(); products(); return false; };
+  if(p.id){ var fi=$("pimg"); fi.onchange=async function(){ var mb=$("imgMsg"); mb.innerHTML='<p style="color:var(--taupe-deep);font-size:.82rem;margin-top:8px">Uploading\u2026</p>';
+    for(var i=0;i<fi.files.length;i++){ var e2=await uploadImage(p.id, fi.files[i]); if(e2){ mb.innerHTML='<div class="msg err">'+e2+'</div>'; break; } }
+    if(!$("imgMsg").querySelector(".msg")) mb.innerHTML=""; fi.value=""; loadImages(p.id); }; }
 }
-async function loadImages(pid){ var box=$("imgList"); if(!box)return; var r=await sb.from("product_images").select("*").eq("product_id",pid).order("sort"); box.innerHTML=(r.data||[]).map(function(im){ return '<div style="position:relative"><img src="'+im.url+'" style="width:66px;height:82px;object-fit:cover"><button class="mini-btn danger" style="position:absolute;top:2px;right:2px;padding:2px 6px" data-rm="'+im.id+'" data-path="'+(im.path||"")+'">\u00d7</button></div>'; }).join(""); box.querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=async function(){ if(b.getAttribute("data-path")) await sb.storage.from("product-images").remove([b.getAttribute("data-path")]); await sb.from("product_images").delete().eq("id",b.getAttribute("data-rm")); loadImages(pid); }; }); }
-async function uploadImage(pid,file){ var path=pid+"/"+Date.now()+"-"+file.name.replace(/[^a-zA-Z0-9.]/g,"_"); var up=await sb.storage.from("product-images").upload(path,file); if(up.error){ alert(up.error.message); return; } var url=sb.storage.from("product-images").getPublicUrl(path).data.publicUrl; await sb.from("product_images").insert({product_id:pid,url:url,path:path}); }
+async function loadImages(pid){ var box=$("imgList"); if(!box)return;
+  var r=await sb.from("product_images").select("*").eq("product_id",pid).order("sort");
+  var imgs=r.data||[];
+  box.innerHTML=imgs.length? imgs.map(function(im,i){ return '<div style="position:relative">'+(i===0?'<span style="position:absolute;bottom:2px;left:2px;background:var(--gold);color:var(--charcoal);font-family:var(--f-util);font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;padding:2px 5px;z-index:2">Main</span>':'')+'<img src="'+im.url+'" style="width:66px;height:82px;object-fit:cover"><button class="mini-btn danger" style="position:absolute;top:2px;right:2px;padding:2px 6px" data-rm="'+im.id+'" data-path="'+(im.path||"")+'" title="Remove">\u00d7</button></div>'; }).join("")
+    : '<p style="color:var(--taupe-deep);font-size:.82rem">No photos yet. The fabric texture / URL above is used until you add one.</p>';
+  box.querySelectorAll("[data-rm]").forEach(function(b){ b.onclick=async function(){ await removeStoragePath(b.getAttribute("data-path")); var res=await sb.from("product_images").delete().eq("id",b.getAttribute("data-rm")); if(saveErr($("imgMsg"),res))return; loadImages(pid); }; });
+}
+async function uploadImage(pid,file){
+  var sortRes=await sb.from("product_images").select("id",{count:"exact",head:true}).eq("product_id",pid);
+  var up=await uploadTo(pid,file); if(up.error) return up.error;
+  var res=await sb.from("product_images").insert({product_id:pid,url:up.url,path:up.path,sort:(sortRes.count||0)});
+  if(res.error){ await removeStoragePath(up.path); return res.error.message; }
+  return null;
+}
 
 /* ---------- CATEGORIES / COLLECTIONS ---------- */
 async function taxonomy(t,label){
@@ -122,19 +155,35 @@ async function taxonomy(t,label){
     table(["Name","Slug","Description",""], rows.map(function(c){ return [ '<b>'+c.name+'</b>', c.slug, (c.description||"\u2014'").slice(0,60), '<button class="mini-btn" data-e="'+c.id+'">Edit</button> <button class="mini-btn danger" data-d="'+c.id+'">Delete</button>' ]; }))+'</div>';
   $("addTax").onclick=function(){ taxForm(t,label,null); };
   root.querySelectorAll("[data-e]").forEach(function(b){ b.onclick=function(){ taxForm(t,label,rows.filter(function(x){return x.id===b.getAttribute("data-e");})[0]); }; });
-  root.querySelectorAll("[data-d]").forEach(function(b){ b.onclick=async function(){ if(!confirm("Delete?"))return; await sb.from(t).delete().eq("id",b.getAttribute("data-d")); if(t==="categories")cats=await fetchAll("categories","sort"); else cols=await fetchAll("collections","sort"); taxonomy(t,label); }; });
+  root.querySelectorAll("[data-d]").forEach(function(b){ b.onclick=async function(){ if(!confirm("Delete?"))return; var res=await sb.from(t).delete().eq("id",b.getAttribute("data-d")); if(saveErr(null,res))return; if(t==="categories")cats=await fetchAll("categories","sort"); else cols=await fetchAll("collections","sort"); taxonomy(t,label); }; });
 }
 function taxForm(t,label,c){ c=c||{};
+  var cur=c.image||"";
+  var isImg = cur && cur.indexOf("fab-")!==0;
   modal((c.id?"Edit":"Add")+" "+label.replace(/s$/,""),
     '<form id="tf">'+field("Name","name","text",c.name||"")+
     '<div class="field"><label>Description</label><textarea name="description" rows="2">'+(c.description||"")+'</textarea></div>'+
-    '<div class="field"><label>Image (swatch class or URL)</label><input name="image" value="'+(c.image||"fab-brocade")+'"></div>'+
+    '<div class="field"><label>Image</label>'+
+      '<div id="taxPrev" style="width:90px;height:110px;margin-bottom:10px;'+(isImg?'background:url('+cur+') center/cover':'')+'" class="swatch '+(cur&&!isImg?cur:'')+'"></div>'+
+      '<input type="file" id="taxImg" accept="image/*">'+
+      '<input type="hidden" name="image" value="'+(cur||"fab-brocade")+'">'+
+      '<p style="font-family:var(--f-util);font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--taupe-deep);margin-top:8px">Upload a photo, or type a fabric texture (e.g. fab-lace) below.</p>'+
+      '<input name="imagetext" value="'+(cur&&!isImg?cur:'')+'" placeholder="fab-lace (optional)" style="margin-top:6px">'+
+    '</div>'+
     '<div id="tfMsg"></div><button class="btn btn-dark btn-block">'+(c.id?"Save":"Create")+'</button></form>');
+  var fi=$("taxImg"); fi.onchange=async function(){ var mb=$("tfMsg"); mb.innerHTML='<p style="color:var(--taupe-deep);font-size:.82rem">Uploading\u2026</p>';
+    var up=await uploadTo(t, fi.files[0]); if(up.error){ mb.innerHTML='<div class="msg err">'+up.error+'</div>'; return; }
+    document.querySelector("#tf [name=image]").value=up.url;
+    var pv=$("taxPrev"); pv.className="swatch"; pv.style.background="url("+up.url+") center/cover"; mb.innerHTML=''; };
   $("tf").onsubmit=async function(e){ e.preventDefault(); var f=e.target;
-    var d={ name:f.name.value.trim(), slug:SLUG(f.name.value), description:f.description.value, image:f.image.value.trim() };
-    try{ if(c.id) await sb.from(t).update(d).eq("id",c.id); else await sb.from(t).insert(d);
-      if(t==="categories")cats=await fetchAll("categories","sort"); else cols=await fetchAll("collections","sort");
-      closeModal(); taxonomy(t,label); }catch(err){ $("tfMsg").innerHTML='<div class="msg err">'+err.message+'</div>'; } return false; };
+    var img = f.imagetext.value.trim() || f.image.value.trim() || "fab-brocade";
+    var d={ name:f.name.value.trim(), slug:SLUG(f.name.value), description:f.description.value, image:img };
+    var btn=f.querySelector("button"); btn.disabled=true; btn.textContent="Saving\u2026";
+    var res = c.id ? await sb.from(t).update(d).eq("id",c.id) : await sb.from(t).insert(d);
+    btn.disabled=false; btn.textContent=c.id?"Save":"Create";
+    if(saveErr($("tfMsg"),res)) return false;
+    if(t==="categories")cats=await fetchAll("categories","sort"); else cols=await fetchAll("collections","sort");
+    closeModal(); taxonomy(t,label); return false; };
 }
 
 /* ---------- ORDERS ---------- */
@@ -148,7 +197,7 @@ async function orders(){
         '<select class="sortsel" data-order="'+o.id+'" style="padding:6px 8px">'+STATUSES.map(function(s){return '<option'+(o.status===s?' selected':'')+'>'+s+'</option>';}).join("")+'</select>',
         new Date(o.created_at).toLocaleDateString(), '<button class="mini-btn" data-view=\''+o.id+'\'>View</button>' ]; }))+
     (list.length?"":'<p style="padding:16px 20px;color:var(--taupe-deep)">No orders yet.</p>')+'</div></div>';
-  root.querySelectorAll("[data-order]").forEach(function(s){ s.onchange=async function(){ await sb.from("orders").update({status:s.value}).eq("id",s.getAttribute("data-order")); }; });
+  root.querySelectorAll("[data-order]").forEach(function(s){ s.onchange=async function(){ var _r=await sb.from("orders").update({status:s.value}).eq("id",s.getAttribute("data-order")); saveErr(null,_r); }; });
   root.querySelectorAll("[data-view]").forEach(function(b){ b.onclick=async function(){ viewOrder(list.filter(function(x){return x.id===b.getAttribute("data-view");})[0]); }; });
 }
 async function viewOrder(o){
@@ -159,7 +208,7 @@ async function viewOrder(o){
     '<tr><td>Delivery</td><td style="text-align:right">'+money(o.delivery_fee)+'</td></tr><tr><td><b>Total</b></td><td style="text-align:right"><b>'+money(o.total)+'</b></td></tr></table>'+
     '<div class="field"><label>Payment status</label><select id="payst" class="sortsel" style="width:100%">'+["pending","paid","failed"].map(function(s){return '<option'+(o.payment_status===s?' selected':'')+'>'+s+'</option>';}).join("")+'</select></div>'+
     '<button class="btn btn-dark btn-block" id="savePay">Update Payment</button>');
-  $("savePay").onclick=async function(){ await sb.from("orders").update({payment_status:$("payst").value}).eq("id",o.id); closeModal(); orders(); };
+  $("savePay").onclick=async function(){ var _r=await sb.from("orders").update({payment_status:$("payst").value}).eq("id",o.id); if(saveErr(null,_r))return; closeModal(); orders(); };
 }
 
 /* ---------- CUSTOMERS ---------- */
@@ -178,7 +227,7 @@ async function subscribers(){
   root.innerHTML='<h1>Subscribers</h1><p class="lead">Your newsletter list.</p><div class="panel"><div style="overflow-x:auto">'+
     table(["Email","Joined",""], list.map(function(s){ return [ s.email, new Date(s.created_at).toLocaleDateString(), '<button class="mini-btn danger" data-d="'+s.id+'">Remove</button>' ]; }))+
     (list.length?"":'<p style="padding:16px 20px;color:var(--taupe-deep)">No subscribers yet.</p>')+'</div></div>';
-  root.querySelectorAll("[data-d]").forEach(function(b){ b.onclick=async function(){ await sb.from("subscribers").delete().eq("id",b.getAttribute("data-d")); subscribers(); }; });
+  root.querySelectorAll("[data-d]").forEach(function(b){ b.onclick=async function(){ var _r=await sb.from("subscribers").delete().eq("id",b.getAttribute("data-d")); if(saveErr(null,_r))return; subscribers(); }; });
 }
 
 /* ---------- REVIEWS ---------- */
@@ -190,8 +239,8 @@ async function reviews(){
       '<span class="pill '+(v.approved?"paid":"pending")+'">'+(v.approved?"Approved":"Pending")+'</span>',
       '<button class="mini-btn" data-ap="'+v.id+'" data-on="'+v.approved+'">'+(v.approved?"Hide":"Approve")+'</button> <button class="mini-btn danger" data-d="'+v.id+'">Delete</button>' ]; }))+
     (list.length?"":'<p style="padding:16px 20px;color:var(--taupe-deep)">No reviews yet.</p>')+'</div></div>';
-  root.querySelectorAll("[data-ap]").forEach(function(b){ b.onclick=async function(){ await sb.from("reviews").update({approved:b.getAttribute("data-on")!=="true"}).eq("id",b.getAttribute("data-ap")); reviews(); }; });
-  root.querySelectorAll("[data-d]").forEach(function(b){ b.onclick=async function(){ if(!confirm("Delete review?"))return; await sb.from("reviews").delete().eq("id",b.getAttribute("data-d")); reviews(); }; });
+  root.querySelectorAll("[data-ap]").forEach(function(b){ b.onclick=async function(){ var _r=await sb.from("reviews").update({approved:b.getAttribute("data-on")!=="true"}).eq("id",b.getAttribute("data-ap")); if(saveErr(null,_r))return; reviews(); }; });
+  root.querySelectorAll("[data-d]").forEach(function(b){ b.onclick=async function(){ if(!confirm("Delete review?"))return; var _r=await sb.from("reviews").delete().eq("id",b.getAttribute("data-d")); if(saveErr(null,_r))return; reviews(); }; });
 }
 
 /* ---------- HOMEPAGE / ANNOUNCEMENT ---------- */
@@ -202,8 +251,27 @@ async function homepage(){
     '<div style="padding:20px"><div class="field"><label>Messages (one per line)</label><textarea id="annMsgs" rows="4">'+((val.messages||[]).join("\n"))+'</textarea></div><button class="btn btn-dark" id="annSave">Save Announcement</button></div></div>';
   var on=val.on!==false; $("annToggle").onclick=function(){ on=!on; $("annToggle").classList.toggle("on",on); };
   $("annSave").onclick=async function(){ var msgs=$("annMsgs").value.split("\n").map(function(x){return x.trim();}).filter(Boolean);
-    await sb.from("site_settings").update({value:{on:on,messages:msgs}}).eq("key","announcement");
+    var res=await sb.from("site_settings").upsert({key:"announcement",value:{on:on,messages:msgs}});
+    if(saveErr(null,res))return;
     $("annSave").textContent="Saved \u2713"; setTimeout(function(){$("annSave").textContent="Save Announcement";},1500); };
+
+  // ---- Homepage hero image ----
+  var hero={image:"",path:""}; try{ var hr=await sb.from("site_settings").select("value").eq("key","hero").single(); if(!hr.error&&hr.data&&hr.data.value){ hero=hr.data.value; } }catch(e){}
+  root.insertAdjacentHTML("beforeend",
+    '<div class="panel"><div class="panel-head"><h3>Homepage Hero Image</h3></div><div style="padding:20px">'+
+      '<div id="heroPrev" style="width:100%;max-width:420px;aspect-ratio:16/7;margin-bottom:12px;'+(hero.image?'background:url('+hero.image+') center/cover':'')+'" class="swatch '+(hero.image?'':'fab-brocade')+'"></div>'+
+      '<input type="file" id="heroImg" accept="image/*"> <button class="mini-btn danger" id="heroRemove"'+(hero.image?'':' style="display:none"')+'>Remove Image</button>'+
+      '<div id="heroMsg"></div>'+
+      '<p style="font-family:var(--f-util);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--taupe-deep);margin-top:10px">A wide, high-quality photo works best. Leave empty to use the default fabric texture.</p>'+
+    '</div></div>');
+  async function saveHero(v){ var res=await sb.from("site_settings").upsert({key:"hero",value:v}); return saveErr($("heroMsg"),res); }
+  $("heroImg").onchange=async function(){ var mb=$("heroMsg"); mb.innerHTML='<p style="color:var(--taupe-deep);font-size:.82rem;margin-top:8px">Uploading\u2026</p>';
+    if(hero.path) await removeStoragePath(hero.path);
+    var up=await uploadTo("hero", this.files[0]); if(up.error){ mb.innerHTML='<div class="msg err">'+up.error+'</div>'; return; }
+    hero={image:up.url,path:up.path}; if(await saveHero(hero))return;
+    var pv=$("heroPrev"); pv.className="swatch"; pv.style.background="url("+up.url+") center/cover"; $("heroRemove").style.display=""; mb.innerHTML='<div class="msg ok">Hero image updated.</div>'; this.value=""; };
+  $("heroRemove").onclick=async function(){ if(hero.path) await removeStoragePath(hero.path); hero={image:"",path:""}; if(await saveHero(hero))return;
+    var pv=$("heroPrev"); pv.className="swatch fab-brocade"; pv.style.background=""; this.style.display="none"; $("heroMsg").innerHTML='<div class="msg ok">Reverted to default.</div>'; };
 
   // ---- Anniversary popup ----
   var av={on:true,num:"10",label:"Years",from:"2016",to:"2026",heading:"A Decade Of <em>Beautiful Fabric.</em>",message:"Ten years dressing your weddings, your Aso-Ebi and your best days. Thank you for celebrating with us.",cta:"Explore The Store",link:"/shop"};
@@ -223,7 +291,7 @@ async function homepage(){
   $("avSave").onclick=async function(){
     var value={ on:avon, num:$("av_num").value, label:$("av_label").value, from:$("av_from").value, to:$("av_to").value,
       heading:$("av_heading").value, message:$("av_message").value, cta:$("av_cta").value, link:$("av_link").value };
-    await sb.from("site_settings").upsert({key:"anniversary",value:value});
+    var _r=await sb.from("site_settings").upsert({key:"anniversary",value:value}); if(saveErr(null,_r))return;
     $("avSave").textContent="Saved \u2713"; setTimeout(function(){$("avSave").textContent="Save Popup";},1500); };
   $("avReset").onclick=function(){ try{ localStorage.removeItem("nbf_anniv_seen"); }catch(e){} $("avReset").textContent="Cleared \u2713"; setTimeout(function(){$("avReset").textContent='Reset "seen" on this device';},1500); };
 }
