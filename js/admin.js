@@ -11,12 +11,17 @@ document.addEventListener("DOMContentLoaded", guard);
 
 async function guard(){
   root = $("adminRoot");
-  if(!sb){ deny("Admin goes live with Supabase","Add your Supabase URL + anon key in <b>js/config.js</b> and run <b>sql/schema.sql</b>. Then register, promote yourself to admin (see schema comments), and this dashboard controls the whole store."); return; }
+  if(!sb){ deny("Admin goes live with Supabase","Add your Supabase URL + anon key in <b>js/config.js</b> and run <b>sql/schema.sql</b>. Then register, promote yourself to admin (see below), and this dashboard controls the whole store."); return; }
   var u=(await sb.auth.getUser()).data.user;
   if(!u){ location.href="/login"; return; }
-  var pr; try{ pr=await sb.from("profiles").select("role,full_name").eq("id",u.id).single(); }catch(e){}
-  if(!pr || pr.error || !pr.data || pr.data.role!=="admin"){ deny("Access denied","This area is for administrators. If you should have access, ask the owner to set your role to <b>admin</b>."); return; }
-  $("adminWho").textContent=(pr.data.full_name||u.email);
+  var pr=null;
+  try{ var res=await sb.from("profiles").select("role,full_name").eq("id",u.id).maybeSingle(); pr=res.data; }catch(e){}
+  var fix='<div style="text-align:left;max-width:560px;margin:18px auto 0;background:#fff;border:1px solid var(--line);padding:18px"><p style="font-family:var(--f-util);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe-deep);margin-bottom:8px">Run this once in Supabase &rarr; SQL Editor</p>'+
+    '<pre style="white-space:pre-wrap;font-size:.8rem;line-height:1.6;color:var(--espresso);margin:0">insert into public.profiles (id, full_name, role)\nselect id, coalesce(raw_user_meta_data-&gt;&gt;\'full_name\',\'Admin\'), \'admin\'\nfrom auth.users where email = \''+(u.email||"you@example.com")+'\'\non conflict (id) do update set role = \'admin\';</pre></div>'+
+    '<p style="color:var(--taupe-deep);margin-top:14px;font-size:.85rem">Then refresh this page.</p>';
+  if(!pr){ deny("One step left to finish setup","We couldn\u2019t find a profile for <b>"+(u.email||"your account")+"</b> yet \u2014 it was likely created before the database was set up, so there\u2019s no row to promote. This SQL creates it and makes you admin in one go:"+fix); return; }
+  if(pr.role!=="admin"){ deny("Not an admin yet","Your account <b>"+(u.email||"")+"</b> exists but isn\u2019t an admin. Run this to promote it:"+fix); return; }
+  $("adminWho").textContent=(pr.full_name||u.email);
   [cats,cols] = await Promise.all([ fetchAll("categories","sort"), fetchAll("collections","sort") ]);
   bindNav(); show("overview");
 }

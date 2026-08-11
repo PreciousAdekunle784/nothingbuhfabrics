@@ -55,14 +55,19 @@ Save. The whole site is now live against your database.
 ## 4. Make yourself the admin
 
 1. Open the site and **Register** with your email (create your account).
-2. Back in Supabase **SQL Editor**, run (use your email):
+2. Back in Supabase **SQL Editor**, run this (use your email). It creates the
+   profile row if it's missing **and** sets admin, so it works even if you
+   registered before running the schema:
 
 ```sql
-update public.profiles set role = 'admin'
-  where id = (select id from auth.users where email = 'you@example.com');
+insert into public.profiles (id, full_name, role)
+select id, coalesce(raw_user_meta_data->>'full_name','Admin'), 'admin'
+from auth.users where email = 'you@example.com'
+on conflict (id) do update set role = 'admin';
 ```
 
-3. Visit **`/admin`** — you now control the whole store.
+3. Sign in at **`/login`**, then visit **`/admin`** — you now control the whole store.
+   (If you were already signed in, just refresh `/admin`.)
 
 ---
 

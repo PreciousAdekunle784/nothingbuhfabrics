@@ -37,12 +37,12 @@ window.doLogin = async function(e){ e.preventDefault();
   try{
     var r=await sb.auth.signInWithPassword({ email:f.email.value.trim(), password:f.password.value });
     if(r.error){ msg(box,"err",r.error.message); btn.disabled=false; btn.textContent="Sign In"; return false; }
-    location.href="/account";
+    location.href="/";
   }catch(err){ msg(box,"err","Something went wrong. Try again."); btn.disabled=false; btn.textContent="Sign In"; }
   return false;
 };
 window.doGoogle = async function(){ var box=document.getElementById("authMsg"); if(needSupabase(box))return false;
-  try{ await sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: location.origin+"/account" } }); }
+  try{ await sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: location.origin+"/" } }); }
   catch(e){ msg(box,"err","Google sign-in isn't enabled yet. Enable it in Supabase > Authentication > Providers."); }
   return false;
 };
