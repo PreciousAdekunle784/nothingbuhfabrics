@@ -199,6 +199,28 @@ async function homepage(){
   $("annSave").onclick=async function(){ var msgs=$("annMsgs").value.split("\n").map(function(x){return x.trim();}).filter(Boolean);
     await sb.from("site_settings").update({value:{on:on,messages:msgs}}).eq("key","announcement");
     $("annSave").textContent="Saved \u2713"; setTimeout(function(){$("annSave").textContent="Save Announcement";},1500); };
+
+  // ---- Anniversary popup ----
+  var av={on:true,num:"10",label:"Years",from:"2016",to:"2026",heading:"A Decade Of <em>Beautiful Fabric.</em>",message:"Ten years dressing your weddings, your Aso-Ebi and your best days. Thank you for celebrating with us.",cta:"Explore The Store",link:"/shop"};
+  try{ var ar=await sb.from("site_settings").select("value").eq("key","anniversary").single(); if(!ar.error&&ar.data&&ar.data.value){ for(var k in ar.data.value){ av[k]=ar.data.value[k]; } } }catch(e){}
+  root.insertAdjacentHTML("beforeend",
+    '<div class="panel"><div class="panel-head"><h3>Anniversary Popup</h3><div style="display:flex;align-items:center;gap:10px"><span style="font-family:var(--f-util);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--taupe-deep)">Show popup</span><div class="toggle'+(av.on!==false?" on":"")+'" id="avToggle"></div></div></div>'+
+    '<div style="padding:20px">'+
+      '<div class="field-row">'+field("Big number","av_num","text",av.num)+field("Label","av_label","text",av.label)+'</div>'+
+      '<div class="field-row">'+field("From year","av_from","text",av.from)+field("To year","av_to","text",av.to)+'</div>'+
+      '<div class="field"><label>Heading (you can use &lt;em&gt; for gold italic)</label><input id="av_heading" value="'+(av.heading||"").replace(/"/g,"&quot;")+'"></div>'+
+      '<div class="field"><label>Message</label><textarea id="av_message" rows="3">'+(av.message||"")+'</textarea></div>'+
+      '<div class="field-row">'+field("Button text","av_cta","text",av.cta)+field("Button link","av_link","text",av.link)+'</div>'+
+      '<p style="font-family:var(--f-util);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--taupe-deep);margin:2px 0 14px">Shows once per visitor every 24 hours, with falling confetti.</p>'+
+      '<button class="btn btn-dark" id="avSave">Save Popup</button> <button class="mini-btn" id="avReset" style="margin-left:8px">Reset "seen" on this device</button>'+
+    '</div></div>');
+  var avon=av.on!==false; $("avToggle").onclick=function(){ avon=!avon; $("avToggle").classList.toggle("on",avon); };
+  $("avSave").onclick=async function(){
+    var value={ on:avon, num:$("av_num").value, label:$("av_label").value, from:$("av_from").value, to:$("av_to").value,
+      heading:$("av_heading").value, message:$("av_message").value, cta:$("av_cta").value, link:$("av_link").value };
+    await sb.from("site_settings").upsert({key:"anniversary",value:value});
+    $("avSave").textContent="Saved \u2713"; setTimeout(function(){$("avSave").textContent="Save Popup";},1500); };
+  $("avReset").onclick=function(){ try{ localStorage.removeItem("nbf_anniv_seen"); }catch(e){} $("avReset").textContent="Cleared \u2713"; setTimeout(function(){$("avReset").textContent='Reset "seen" on this device';},1500); };
 }
 
 /* ---------- ui helpers ---------- */

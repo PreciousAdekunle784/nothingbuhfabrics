@@ -221,6 +221,49 @@ async function initAnnounce(){
     setInterval(function(){ sp[i].classList.remove("on"); i=(i+1)%sp.length; sp[i].classList.add("on"); }, 4200); }
 }
 
+/* ---------- anniversary popup ---------- */
+function confetti(n){
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var host=document.createElement("div"); host.className="confetti"; document.body.appendChild(host);
+  var colors=["#c6a35b","#d8bd82","#ece3d2","#5a2b34","#e8d9b0"];
+  for(var i=0;i<n;i++){
+    var s=document.createElement("i"); var size=6+Math.random()*8;
+    s.style.left=(Math.random()*100)+"vw";
+    s.style.width=size+"px"; s.style.height=(size*(0.5+Math.random()))+"px";
+    s.style.background=colors[i%colors.length];
+    s.style.animationDuration=(3+Math.random()*3.5)+"s";
+    s.style.animationDelay=(Math.random()*2.2)+"s";
+    if(Math.random()>0.62) s.style.borderRadius="50%";
+    host.appendChild(s);
+  }
+  setTimeout(function(){ if(host.parentNode) host.remove(); }, 9500);
+}
+async function initAnniversary(){
+  var KEY="nbf_anniv_seen";
+  try{ var last=localStorage.getItem(KEY); if(last && (Date.now()-(+last))<86400000) return; }catch(e){}
+  var a={ on:true, num:"10", label:"Years", from:"2016", to:"2026",
+    heading:"A Decade Of <em>Beautiful Fabric.</em>",
+    message:"Ten years dressing your weddings, your Aso-Ebi and your best days. Thank you for celebrating with us.",
+    cta:"Explore The Store", link:"/shop" };
+  if(sb){ try{ var r=await sb.from("site_settings").select("value").eq("key","anniversary").single();
+    if(!r.error && r.data && r.data.value){ for(var k in r.data.value){ a[k]=r.data.value[k]; } } }catch(e){} }
+  if(a.on===false) return;
+  var html='<div class="anniv-scrim" id="annivScrim"><div class="anniv" role="dialog" aria-label="Anniversary">'+
+    '<button class="anniv-x" aria-label="Close" onclick="NBF.closeAnniv()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'+
+    '<div class="anniv-eyebrow">Nothingbuh Fabrics</div>'+
+    '<div class="anniv-num">'+a.num+'</div>'+
+    '<div class="anniv-years">'+a.from+' \u2014 '+a.to+' \u00b7 '+a.label+'</div>'+
+    '<div class="anniv-rule"></div>'+
+    '<h2>'+a.heading+'</h2>'+
+    '<p>'+a.message+'</p>'+
+    '<a href="'+(a.link||"/shop")+'" class="btn btn-gold" onclick="NBF.closeAnniv()">'+a.cta+'</a>'+
+  '</div></div>';
+  document.body.insertAdjacentHTML("beforeend", html);
+  try{ localStorage.setItem(KEY, Date.now()); }catch(e){}
+  setTimeout(function(){ var s=document.getElementById("annivScrim"); if(s){ s.classList.add("open"); confetti(48);
+    s.addEventListener("click",function(e){ if(e.target===s) NBF.closeAnniv(); }); } }, 650);
+}
+
 /* ---------- render helpers ---------- */
 function badges(pr){
   var h="";
@@ -302,6 +345,7 @@ window.NBF = {
     document.getElementById("qvAdd").onclick=function(){ Cart.add(pr,1); NBF.closeQuick(); };
     document.getElementById("qvScrim").classList.add("open"); },
   closeQuick:function(){ document.getElementById("qvScrim").classList.remove("open"); },
+  closeAnniv:function(){ var s=document.getElementById("annivScrim"); if(s)s.classList.remove("open"); },
   subscribe: async function(e,form){ e.preventDefault(); var email=form.querySelector("input").value;
     if(sb){ try{ await sb.from("subscribers").insert({email:email}); }catch(err){} }
     form.querySelector("button").textContent="Added \u2713"; form.reset(); return false; },
@@ -314,9 +358,9 @@ function onScroll(){ var nav=document.getElementById("nav"); if(!nav)return;
 
 /* ---------- boot ---------- */
 document.addEventListener("DOMContentLoaded", function(){
-  buildChrome(); sync(); initAnnounce();
+  buildChrome(); sync(); initAnnounce(); initAnniversary();
   window.addEventListener("scroll", onScroll, {passive:true}); onScroll();
-  document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ NBF.drawer(0); NBF.closeQuick(); NBF.mob(0); }});
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ NBF.drawer(0); NBF.closeQuick(); NBF.mob(0); NBF.closeAnniv(); }});
   var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add("in");io.unobserve(x.target);}});},{threshold:.12});
   document.querySelectorAll(".reveal").forEach(function(el){io.observe(el);});
   if (window.NBF_PAGE) window.NBF_PAGE();   // page-specific init defined inline per page

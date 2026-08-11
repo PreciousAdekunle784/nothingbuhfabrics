@@ -442,7 +442,31 @@ footer{background:var(--charcoal);color:var(--cream)}
   .stat-grid{grid-template-columns:1fr 1fr}
   .field-row{flex-direction:column;gap:0}
 }
+/* ============ ANNIVERSARY POPUP + CONFETTI ============ */
+.anniv-scrim{position:fixed;inset:0;z-index:190;background:rgba(26,22,19,.74);backdrop-filter:blur(6px);display:grid;place-items:center;padding:20px;opacity:0;visibility:hidden;transition:opacity .5s var(--ease),visibility .5s}
+.anniv-scrim.open{opacity:1;visibility:visible}
+.anniv{position:relative;width:100%;max-width:440px;background:linear-gradient(165deg,#241d17,#17120f 70%);color:var(--ivory);text-align:center;padding:46px 32px 38px;overflow:hidden;border:1px solid rgba(198,163,91,.38);box-shadow:0 30px 80px rgba(0,0,0,.5);transform:translateY(22px) scale(.95);transition:transform .55s var(--ease)}
+.anniv-scrim.open .anniv{transform:none}
+.anniv::before{content:"";position:absolute;top:-40%;left:50%;width:150%;transform:translateX(-50%);aspect-ratio:1;background:radial-gradient(circle,rgba(198,163,91,.22),transparent 60%);pointer-events:none}
+.anniv-x{position:absolute;top:14px;right:14px;width:30px;height:30px;display:grid;place-items:center;color:var(--taupe);z-index:3}
+.anniv-x:hover{color:var(--gold)}
+.anniv-x svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.6;fill:none}
+.anniv-eyebrow{position:relative;font-family:var(--f-util);font-size:.68rem;letter-spacing:.34em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:10px}
+.anniv-num{position:relative;font-family:var(--f-display);font-weight:500;font-size:clamp(4rem,18vw,6.2rem);line-height:.9;color:var(--gold);text-shadow:0 2px 30px rgba(198,163,91,.35)}
+.anniv-num em{font-style:italic}
+.anniv-years{position:relative;font-family:var(--f-util);font-size:.72rem;letter-spacing:.4em;text-transform:uppercase;color:var(--cream);margin:2px 0 16px}
+.anniv h2{position:relative;font-family:var(--f-display);font-weight:500;font-size:1.5rem;line-height:1.15;margin-bottom:12px}
+.anniv h2 em{font-style:italic;color:var(--gold-soft)}
+.anniv p{position:relative;color:var(--taupe);font-size:.94rem;font-weight:300;line-height:1.7;max-width:34ch;margin:0 auto 24px}
+.anniv .btn{position:relative}
+.anniv-rule{position:relative;width:44px;height:1px;background:var(--gold);margin:0 auto 18px;opacity:.7}
+.confetti{position:fixed;inset:0;z-index:200;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;top:-12vh;display:block;opacity:.92;animation:nbfFall linear forwards}
+@keyframes nbfFall{to{transform:translateY(118vh) rotate(760deg)}}
+@media(max-width:760px){.anniv{padding:40px 24px 32px}}
+
 @media(prefers-reduced-motion:reduce){
+  .confetti{display:none}
   *{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto}
   .reveal,.card{opacity:1;transform:none}
 }
