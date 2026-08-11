@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Best Sellers · Nothingbuh Fabrics</title>
+<meta name="description" content="The fabrics our customers reach for again and again.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Jost:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body data-page="best-sellers">
+<main class="wrap" style="padding-bottom:clamp(56px,8vw,90px)">
+  <div class="page-head">
+    <div class="crumb"><a href="/">Home</a> / Best Sellers</div>
+    <span class="eyebrow">Most Loved</span>
+    <h1 class="serif">Best Sellers</h1>
+    <p>The fabrics our customers reach for again and again.</p>
+  </div>
+  <div class="result-count" id="count" style="margin-top:24px">Loading…</div>
+  <div class="prod-grid" id="grid"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+window.NBF_PAGE = async function(){
+  var all = await NBF.DATA.products();
+  var list = all.filter(function(p){ return p.best_seller; });
+  if(!list.length) list = all.slice(0,8);
+  document.getElementById("count").textContent = list.length + " fabric" + (list.length===1?"":"s");
+  NBF.paintCards(document.getElementById("grid"), list);
+};
+</script>
+</body>
+</html>

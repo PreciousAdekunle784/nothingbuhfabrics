@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Contact · Nothingbuh Fabrics</title>
+<meta name="description" content="Get in touch with Nothingbuh Fabrics — WhatsApp, Instagram, delivery and Aso-Ebi enquiries.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Jost:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body data-page="contact">
+<main class="wrap pad-y">
+  <div class="page-head"><div class="crumb"><a href="/">Home</a> / Contact</div><span class="eyebrow">Say Hello</span><h1 class="serif">Get In <em>Touch</em></h1>
+    <p>Questions about a fabric, delivery, or a group Aso-Ebi order? We're quick to respond.</p></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:40px;margin-top:30px;align-items:start" class="reveal" id="contactGrid">
+    <div>
+      <div class="fgroup" style="border-top:1px solid var(--line)"><h4>WhatsApp</h4><p style="font-size:.95rem;color:var(--espresso)">Fastest way to reach us — for questions, colour matching and bulk orders.</p><a href="#" onclick="return waGeneral()" class="btn btn-gold" style="margin-top:12px">Chat On WhatsApp</a></div>
+      <div class="fgroup"><h4>Instagram</h4><p style="font-size:.95rem;color:var(--espresso)" id="ig">@nothingbuhfabrics</p></div>
+      <div class="fgroup"><h4>Delivery</h4><p style="font-size:.95rem;color:var(--espresso)">Lagos same-day / next-day. Nationwide 2–5 working days.</p></div>
+      <div class="fgroup" style="border-bottom:none"><h4>Aso-Ebi & Bulk</h4><p style="font-size:.95rem;color:var(--espresso)">We coordinate group orders and match colour across multiple lengths. Message us with your quantities.</p></div>
+    </div>
+    <form onsubmit="return NBF_CONTACT(event)" style="background:#fff;border:1px solid var(--line);padding:28px">
+      <h3 class="serif" style="font-size:1.4rem;margin-bottom:16px">Send A Message</h3>
+      <div id="cMsg" class="hide"></div>
+      <div class="field"><label>Name</label><input name="name" required></div>
+      <div class="field"><label>Email</label><input name="email" type="email" required></div>
+      <div class="field"><label>Message</label><textarea name="message" rows="4" required></textarea></div>
+      <button class="btn btn-dark btn-block">Send Message</button>
+    </form>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+window.NBF_PAGE=function(){ if(window.NBF_CONFIG&&window.NBF_CONFIG.IG_HANDLE) document.getElementById("ig").textContent=window.NBF_CONFIG.IG_HANDLE; };
+window.NBF_CONTACT=function(e){ e.preventDefault(); var f=e.target;
+  var txt="Hello Nothingbuh Fabrics%0AName: "+encodeURIComponent(f.name.value)+"%0AEmail: "+encodeURIComponent(f.email.value)+"%0A%0A"+encodeURIComponent(f.message.value);
+  window.open("https://wa.me/"+(window.NBF_CONFIG.WA_NUMBER||"")+"?text="+txt,"_blank");
+  var box=document.getElementById("cMsg"); box.className="msg ok"; box.textContent="Opening WhatsApp with your message…"; f.reset(); return false; };
+</script>
+</body>
+</html>

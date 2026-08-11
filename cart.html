@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Your Bag · Nothingbuh Fabrics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Jost:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body data-page="cart">
+<main class="wrap" style="padding-bottom:clamp(56px,8vw,90px)">
+  <div class="page-head"><div class="crumb"><a href="/">Home</a> / Bag</div><h1 class="serif">Your <em>Bag</em></h1></div>
+  <div class="cart-grid" id="cartRoot" style="margin-top:28px"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+window.NBF_PAGE=function(){ render(); };
+function render(){
+  var items=NBF.Cart.items(), root=document.getElementById("cartRoot");
+  if(!items.length){ root.innerHTML='<div class="empty" style="grid-column:1/-1"><h3>Your bag is empty</h3><p>Add some fabrics you love.</p><a href="/shop" class="btn btn-dark" style="margin-top:16px">Shop Fabrics</a></div>'; return; }
+  var sub=NBF.Cart.subtotal();
+  root.innerHTML='<div>'+items.map(function(it){ var sw=it.swatch&&it.swatch.indexOf("fab-")!==0?'class="sw swatch img" style="background-image:url('+it.swatch+')"':'class="sw swatch '+(it.swatch||"fab-brocade")+'"'; return '<div class="cart-line"><div '+sw+'></div><div class="info"><h3>'+it.name+'</h3><div class="type">'+(it.type||"")+'</div><div class="qtyrow" style="display:flex;align-items:center;gap:10px;margin-top:10px"><div class="qty"><button onclick="NBF_Q(\''+it.slug+'\',-1)">−</button><span>'+it.qty+'</span><button onclick="NBF_Q(\''+it.slug+'\',1)">+</button></div></div><button class="rm" onclick="NBF_RM(\''+it.slug+'\')">Remove</button></div><div class="price">'+NBF.money(it.price*it.qty)+'</div></div>'; }).join("")+'</div>'+
+  '<div class="summary"><h3>Summary</h3><div class="row"><span>Subtotal</span><span>'+NBF.money(sub)+'</span></div><div class="row"><span>Delivery</span><span>Calculated at checkout</span></div><div class="row total"><span>Total</span><span>'+NBF.money(sub)+'</span></div><a href="/checkout" class="btn btn-gold btn-block" style="margin-top:18px">Proceed To Checkout</a><a href="/shop" class="btn btn-line btn-block" style="margin-top:8px">Continue Shopping</a><p class="note">Secure checkout · Paystack · Flutterwave · Bank transfer</p></div>';
+}
+window.NBF_Q=function(s,d){ var it=NBF.Cart.items().filter(function(x){return x.slug===s;})[0]; if(it)NBF.Cart.set(s,it.qty+d); render(); };
+window.NBF_RM=function(s){ NBF.Cart.remove(s); render(); };
+</script>
+</body>
+</html>

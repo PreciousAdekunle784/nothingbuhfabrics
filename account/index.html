@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>My Account · Nothingbuh Fabrics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Jost:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body data-page="account">
+<main class="wrap pad-y" style="padding-block:clamp(32px,5vw,60px)">
+  <div id="acctRoot">
+    <div class="page-head" style="padding-top:0"><span class="eyebrow">My Account</span><h1 class="serif">Hello, <em id="acctName">there</em></h1></div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:26px" id="acctCols">
+      <div>
+        <div class="panel" style="padding:24px"><h3 class="serif" style="font-size:1.3rem;margin-bottom:14px">Profile</h3>
+          <div id="acctMsg" class="hide"></div>
+          <form id="acctProfile" onsubmit="return saveProfile(event)">
+            <div class="field"><label>Full name</label><input name="full_name"></div>
+            <div class="field"><label>Phone</label><input name="phone"></div>
+            <div class="field"><label>Email</label><input name="email" disabled></div>
+            <button class="btn btn-dark">Save Changes</button>
+          </form>
+        </div>
+        <div class="panel" style="padding:24px"><h3 class="serif" style="font-size:1.3rem;margin-bottom:14px">Change Password</h3>
+          <div id="pwMsg" class="hide"></div>
+          <form onsubmit="return changePw(event)">
+            <div class="field"><label>New password</label><input name="pw" type="password"></div>
+            <button class="btn btn-line">Update Password</button>
+          </form>
+        </div>
+      </div>
+      <div>
+        <div class="panel" style="padding:24px"><h3 class="serif" style="font-size:1.3rem;margin-bottom:6px">My Orders</h3><div id="acctOrders"></div></div>
+        <div class="panel" style="padding:24px"><h3 class="serif" style="font-size:1.3rem;margin-bottom:6px">Addresses</h3><div id="acctAddr"></div></div>
+        <button class="btn btn-ghost btn-block" onclick="signOut()">Log Out</button>
+      </div>
+    </div>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/auth.js"></script>
+<script>window.NBF_PAGE=function(){ initAccount(); };</script>
+</body>
+</html>

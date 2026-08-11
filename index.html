@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nothingbuh Fabrics · Luxury Nigerian Fabrics</title>
+<meta name="description" content="A luxury Nigerian textile house. Beautiful brocade, lace, sequins and heritage fabrics for weddings, Aso-Ebi and celebrations.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Jost:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body data-page="home">
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="swatch fab-brocade"></div>
+    <div class="hero-inner">
+      <span class="eyebrow">Luxury Nigerian Fabrics</span>
+      <h1 class="serif">Fabric Worthy Of <em>The Occasion.</em></h1>
+      <p>Brocade, lace, sequins and heritage weaves — hand-picked for weddings, Aso-Ebi and the outfits people remember.</p>
+      <div class="hero-cta">
+        <a href="/shop" class="btn btn-gold">Shop All Fabrics</a>
+        <a href="/collections" class="btn btn-line" style="color:var(--ivory)">View Collections</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED CATEGORIES -->
+  <section class="wrap pad-y">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">Shop By Fabric</span><h2 class="serif">Featured <em>Categories</em></h2></div>
+      <a href="/collections" class="link-arrow">All Collections →</a>
+    </div>
+    <div class="tiles reveal" id="homeCats"></div>
+  </section>
+
+  <!-- BEST SELLERS / FEATURED -->
+  <section class="wrap" style="padding-bottom:clamp(56px,8vw,110px)">
+    <div class="sec-head reveal">
+      <div><span class="eyebrow">Most Loved</span><h2 class="serif">Best <em>Sellers</em></h2></div>
+      <a href="/best-sellers" class="link-arrow">See All →</a>
+    </div>
+    <div class="prod-grid" id="homeProds"></div>
+  </section>
+
+  <!-- WHY CHOOSE US (3) -->
+  <section class="wrap" style="padding-bottom:clamp(56px,8vw,110px)">
+    <div class="why reveal">
+      <div class="why-item"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 9l-5 4.5L17.5 21 12 17l-5.5 4L8 13.5 3 9l6.5-.5z"/></svg></div><h3 class="serif">Curated Quality</h3><p>Every fabric is hand-selected. If it isn't good enough for our own outfit, it isn't on the shelf.</p></div>
+      <div class="why-item"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="1"/><path d="M3 10h18M7 15h4"/></svg></div><h3 class="serif">Safe Payment</h3><p>Pay securely with Paystack, Flutterwave or bank transfer. Your order is confirmed the moment payment clears.</p></div>
+      <div class="why-item"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 13l2-6h11l3 4h2v4h-2M5 17a2 2 0 1 0 4 0M15 17a2 2 0 1 0 4 0"/></svg></div><h3 class="serif">Nationwide Delivery</h3><p>Fast dispatch across Nigeria, with same-day options in Lagos. Track every order from your account.</p></div>
+    </div>
+  </section>
+
+  <!-- SOCIAL PROOF -->
+  <section class="wrap" style="padding-bottom:clamp(56px,8vw,110px)">
+    <div class="sec-head reveal center" style="justify-content:center;text-align:center"><div><span class="eyebrow">Loved By Our Customers</span><h2 class="serif">Worn To The <em>Best Days.</em></h2></div></div>
+    <div class="reviews-strip reveal">
+      <div class="review-card"><div class="stars">★★★★★</div><p>"The brocade I ordered for my traditional wedding was even richer in person. Everyone asked where it was from."</p><div class="who"><b>Amaka O.</b> · Lagos</div></div>
+      <div class="review-card"><div class="stars">★★★★★</div><p>"Ordered Aso-Ebi for 12 people and every yard matched perfectly. Delivery was quick and the packaging felt premium."</p><div class="who"><b>Bisi A.</b> · Ibadan</div></div>
+      <div class="review-card"><div class="stars">★★★★★</div><p>"My go-to for lace now. Beautiful quality and they actually pick up when you message. Rare these days."</p><div class="who"><b>Ngozi E.</b> · Abuja</div></div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="wrap" style="padding-bottom:clamp(56px,8vw,110px)">
+    <div class="reveal" style="background:var(--charcoal);color:var(--ivory);text-align:center;padding:clamp(44px,7vw,84px) var(--pad)">
+      <span class="eyebrow" style="color:var(--gold-soft)">Ready When You Are</span>
+      <h2 class="serif" style="font-size:clamp(2rem,5vw,3.4rem);margin:.4em 0 .6rem;color:var(--ivory)">Find Your Next <em style="color:var(--gold-soft);font-style:italic">Statement Fabric.</em></h2>
+      <p style="color:var(--cream);max-width:40ch;margin:0 auto 1.8rem;font-weight:300">Browse the full catalog and build your bag — checkout is quick and secure.</p>
+      <a href="/shop" class="btn btn-gold">Shop All Fabrics</a>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+window.NBF_PAGE = async function(){
+  var cats = await NBF.DATA.categories();
+  document.getElementById("homeCats").innerHTML = cats.slice(0,4).map(function(c){ return NBF.tileHtml(c, "/shop?category="); }).join("");
+  var prods = await NBF.DATA.products();
+  var best = prods.filter(function(p){return p.best_seller;});
+  if(best.length<4) best = prods.filter(function(p){return p.featured||p.best_seller;});
+  if(best.length<4) best = prods;
+  NBF.paintCards(document.getElementById("homeProds"), best.slice(0,4));
+};
+</script>
+</body>
+</html>

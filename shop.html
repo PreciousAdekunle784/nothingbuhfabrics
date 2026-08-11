@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Shop All Fabrics · Nothingbuh Fabrics</title>
+<meta name="description" content="Browse the full Nothingbuh Fabrics catalog — brocade, lace, sequins, velvet, organza and heritage prints.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Jost:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body data-page="shop">
+<main class="wrap" style="padding-bottom:clamp(56px,8vw,90px)">
+  <div class="page-head">
+    <div class="crumb"><a href="/">Home</a> / Shop</div>
+    <span class="eyebrow">The Full Catalog</span>
+    <h1 class="serif">Shop All <em>Fabrics</em></h1>
+    <p>Every fabric we carry, in one place. Filter by category, price and availability to find the one.</p>
+  </div>
+
+  <div class="shop-wrap" style="margin-top:30px">
+    <aside class="filters-col" id="filters">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h4 style="font-family:var(--f-display);font-size:1.2rem">Filters</h4>
+        <button class="mini-btn" onclick="document.getElementById('filters').classList.remove('open')" style="display:none" id="closeFilters">Done</button>
+      </div>
+      <div class="fgroup"><h4>Category</h4><div id="fCats"></div></div>
+      <div class="fgroup"><h4>Max Price</h4><input type="range" class="frange" id="fPrice" min="0" max="80000" step="5000" value="80000"><div style="font-family:var(--f-util);font-size:.78rem;color:var(--taupe-deep)" id="fPriceLbl">Up to ₦80,000</div></div>
+      <div class="fgroup"><h4>Availability</h4><label class="fopt"><input type="checkbox" id="fStock"> In stock only</label></div>
+      <button class="btn btn-line btn-block" style="margin-top:16px" onclick="NBF_RESET()">Clear Filters</button>
+    </aside>
+
+    <div>
+      <div class="shop-bar">
+        <div class="searchbar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input type="search" id="fSearch" placeholder="Search fabrics, colours, types…"></div>
+        <button class="btn btn-ghost mobile-filter-btn" onclick="document.getElementById('filters').classList.add('open')" style="padding:11px 18px">Filters</button>
+        <select class="sortsel" id="fSort"><option value="new">Newest</option><option value="low">Price: Low → High</option><option value="high">Price: High → Low</option><option value="az">Name A → Z</option></select>
+      </div>
+      <div class="result-count" id="count">Loading…</div>
+      <div class="prod-grid" id="grid"></div>
+      <div class="center" style="margin-top:36px"><button class="btn btn-dark" id="loadMore" style="display:none">Load More</button></div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+var ALL=[], SHOWN=0, PAGE=8;
+function qs(k){ return new URLSearchParams(location.search).get(k); }
+window.NBF_PAGE = async function(){
+  ALL = await NBF.DATA.products();
+  var cats = await NBF.DATA.categories();
+  var pre = qs("category");
+  document.getElementById("fCats").innerHTML = cats.map(function(c){ return '<label class="fopt"><input type="checkbox" class="fcat" value="'+c.slug+'"'+(pre===c.slug?' checked':'')+'> '+c.name+'</label>'; }).join("");
+  document.querySelectorAll(".fcat").forEach(function(c){ c.onchange=apply; });
+  ["fSearch","fSort","fStock"].forEach(function(id){ var el=document.getElementById(id); el.addEventListener("input",apply); el.addEventListener("change",apply); });
+  var pr=document.getElementById("fPrice"); pr.addEventListener("input",function(){ document.getElementById("fPriceLbl").textContent="Up to "+NBF.money(+pr.value); apply(); });
+  document.getElementById("loadMore").onclick=function(){ SHOWN+=PAGE; render(); };
+  if(qs("q")){ document.getElementById("fSearch").value=qs("q"); }
+  apply();
+};
+function current(){
+  var q=(document.getElementById("fSearch").value||"").toLowerCase().trim();
+  var chosen=Array.prototype.map.call(document.querySelectorAll(".fcat:checked"),function(c){return c.value;});
+  var maxP=+document.getElementById("fPrice").value;
+  var inStock=document.getElementById("fStock").checked;
+  var sort=document.getElementById("fSort").value;
+  var list=ALL.filter(function(p){
+    if(chosen.length && chosen.indexOf(p.category)<0) return false;
+    if((p.sale_price||p.price)>maxP) return false;
+    if(inStock && p.stock_quantity<=0) return false;
+    if(q){ var hay=(p.name+" "+p.fabric_type+" "+p.category+" "+p.collection).toLowerCase(); if(hay.indexOf(q)<0) return false; }
+    return true;
+  });
+  if(sort==="low") list.sort(function(a,b){return (a.sale_price||a.price)-(b.sale_price||b.price);});
+  if(sort==="high") list.sort(function(a,b){return (b.sale_price||b.price)-(a.sale_price||a.price);});
+  if(sort==="az") list.sort(function(a,b){return a.name.localeCompare(b.name);});
+  return list;
+}
+function apply(){ SHOWN=PAGE; render(); }
+function render(){
+  var list=current();
+  document.getElementById("count").textContent=list.length+" fabric"+(list.length===1?"":"s");
+  NBF.paintCards(document.getElementById("grid"), list.slice(0,SHOWN));
+  document.getElementById("loadMore").style.display = list.length>SHOWN ? "inline-flex" : "none";
+}
+window.NBF_RESET=function(){ document.querySelectorAll(".fcat").forEach(function(c){c.checked=false;}); document.getElementById("fSearch").value=""; document.getElementById("fStock").checked=false; document.getElementById("fPrice").value=80000; document.getElementById("fPriceLbl").textContent="Up to ₦80,000"; document.getElementById("fSort").value="new"; apply(); };
+</script>
+</body>
+</html>

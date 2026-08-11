@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fabric · Nothingbuh Fabrics</title>
+<meta name="description" content="Fabric details at Nothingbuh Fabrics.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Jost:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body data-page="product" class="pdp-page">
+<main class="wrap" style="padding-block:26px clamp(56px,8vw,90px)">
+  <div class="crumb" id="crumb"><a href="/">Home</a> / <a href="/shop">Shop</a> / …</div>
+  <div id="pdpRoot" style="margin-top:14px"></div>
+
+  <section style="margin-top:clamp(48px,7vw,90px)">
+    <div class="sec-head"><div><span class="eyebrow">You May Also Like</span><h2 class="serif">Related <em>Fabrics</em></h2></div></div>
+    <div class="prod-grid" id="related"></div>
+  </section>
+</main>
+
+<div class="sticky-buy" id="stickyBuy" style="display:none">
+  <div><div class="p" id="sbPrice"></div></div>
+  <button class="btn btn-gold" id="sbAdd">Add To Bag</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+var QTY=1, PROD=null;
+function slug(){ return new URLSearchParams(location.search).get("slug"); }
+window.NBF_PAGE = async function(){
+  var s=slug(); PROD = s ? await NBF.DATA.product(s) : null;
+  var all = await NBF.DATA.products();
+  if(!PROD){ document.getElementById("pdpRoot").innerHTML='<div class="empty"><h3>Fabric not found</h3><p>It may have sold out or moved. <a href="/shop" style="color:var(--gold)">Back to shop →</a></p></div>'; return; }
+  document.title = PROD.name + " · Nothingbuh Fabrics";
+  document.getElementById("crumb").innerHTML='<a href="/">Home</a> / <a href="/shop">Shop</a> / '+PROD.name;
+  render(PROD);
+  var rel=all.filter(function(p){return p.slug!==PROD.slug && (p.category===PROD.category||p.collection===PROD.collection);}).slice(0,4);
+  if(rel.length<4) rel=all.filter(function(p){return p.slug!==PROD.slug;}).slice(0,4);
+  NBF.paintCards(document.getElementById("related"), rel);
+  window.addEventListener("scroll",function(){ document.getElementById("stickyBuy").style.display = (window.innerWidth<=760 && window.scrollY>400)?"flex":"none"; },{passive:true});
+};
+function price(p){ return p.sale_price ? '<del>'+NBF.money(p.price)+'</del>'+NBF.money(p.sale_price)+'<span class="save">Save '+NBF.money(p.price-p.sale_price)+'</span>' : NBF.money(p.price); }
+function render(p){
+  var out = p.stock_quantity<=0;
+  var swMain = p.swatch && p.swatch.indexOf("fab-")!==0 ? 'class="swatch img" style="background-image:url('+p.swatch+')"' : 'class="swatch '+(p.swatch||"fab-brocade")+'"';
+  var gallery = [p.swatch, p.alt].concat(p.images||[]).filter(Boolean);
+  document.getElementById("sbPrice").innerHTML = price(p);
+  document.getElementById("sbAdd").onclick=function(){ NBF.Cart.add(p, QTY); };
+  document.getElementById("pdpRoot").innerHTML =
+  '<div class="pdp"><div class="pdp-gallery"><div class="pdp-main" id="pdpMain" onclick="this.classList.toggle(\'zoom\')"><div '+swMain+'></div></div>'+
+    '<div class="pdp-thumbs" id="thumbs">'+gallery.map(function(g,i){ var c= g.indexOf("fab-")!==0 ? 'class="swatch img" style="background-image:url('+g+')"' : 'class="swatch '+g+'"'; return '<button class="'+(i===0?"active":"")+'" data-i="'+i+'" data-sw="'+g+'"><div '+c+'></div></button>'; }).join("")+'</div></div>'+
+  '<div class="pdp-info"><span class="eyebrow">'+p.fabric_type+'</span><h1 class="serif">'+p.name+'</h1>'+
+    '<div class="pdp-price">'+price(p)+'</div>'+
+    '<div class="pdp-avail '+(out?"out":"")+'">'+(out?"● Currently Out Of Stock":"● In Stock — Ready To Ship")+'</div>'+
+    '<p class="pdp-desc">'+(p.description||"")+'</p>'+
+    '<div class="pdp-row"><span class="eyebrow">Colours</span><div class="color-dots">'+(p.colors||[]).map(function(c){return '<i style="background:'+c+'"></i>';}).join("")+'</div></div>'+
+    '<div class="pdp-row"><span class="eyebrow">Quantity</span><div class="qty"><button onclick="NBF_Q(-1)">−</button><span id="qtyN">1</span><button onclick="NBF_Q(1)">+</button></div></div>'+
+    '<div class="pdp-actions"><button class="btn btn-dark" id="addBtn" '+(out?"disabled":"")+'>Add To Bag</button><button class="btn btn-gold" id="buyBtn" '+(out?"disabled":"")+'>Buy Now</button></div>'+
+    '<button class="btn btn-line btn-block" id="wishBtn" style="margin-bottom:6px">'+(NBF.Wish.has(p.slug)?"♥ Saved":"♡ Save To Wishlist")+'</button>'+
+    '<div class="pdp-meta"><dt>Type</dt><dd>'+p.fabric_type+'</dd><dt>Unit</dt><dd>'+(p.unit||"per 5-yard length")+'</dd><dt>Category</dt><dd>'+(p.category||"—")+'</dd></div>'+
+    '<div style="margin-top:22px">'+
+      '<details class="acc" open><summary>Delivery</summary><p>Lagos: same-day / next-day dispatch. Nationwide: 2–5 working days via trusted couriers. Delivery is calculated at checkout.</p></details>'+
+      '<details class="acc"><summary>Returns &amp; Exchanges</summary><p>Unused, uncut fabric can be exchanged within 3 days of delivery. Cut lengths and sale items are final. Message us on WhatsApp to arrange.</p></details>'+
+      '<details class="acc"><summary>Need Help Or Bulk / Aso-Ebi?</summary><p>For group orders and colour matching across multiple lengths, tap the WhatsApp button — we\'ll help you coordinate.</p></details>'+
+    '</div>'+
+    '<div style="margin-top:26px"><h3 class="serif" style="font-size:1.3rem;margin-bottom:14px">Customer Reviews</h3><div class="reviews-list" id="revList"><p style="color:var(--taupe-deep);font-size:.9rem">No reviews yet — be the first once you\'ve received your order.</p></div></div>'+
+  '</div></div>';
+  document.getElementById("addBtn").onclick=function(){ NBF.Cart.add(p, QTY); };
+  document.getElementById("buyBtn").onclick=function(){ NBF.Cart.add(p, QTY); location.href="/checkout"; };
+  document.getElementById("wishBtn").onclick=function(){ var on=NBF.Wish.toggle(p.slug); this.textContent=on?"♥ Saved":"♡ Save To Wishlist"; };
+  document.querySelectorAll("#thumbs button").forEach(function(b){ b.onclick=function(){ document.querySelectorAll("#thumbs button").forEach(function(x){x.classList.remove("active");}); b.classList.add("active"); var g=b.getAttribute("data-sw"); var m=document.querySelector("#pdpMain > div"); if(g.indexOf("fab-")!==0){ m.className="swatch img"; m.style.backgroundImage="url("+g+")"; } else { m.className="swatch "+g; m.style.backgroundImage=""; } }; });
+  loadReviews(p);
+};
+window.NBF_Q=function(d){ QTY=Math.max(1,QTY+d); document.getElementById("qtyN").textContent=QTY; };
+async function loadReviews(p){
+  if(!window.sb) return;
+  try{ var pr=await sb.from("products").select("id").eq("slug",p.slug).single(); if(pr.error)return;
+    var r=await sb.from("reviews").select("*").eq("product_id",pr.data.id).eq("approved",true).order("created_at",{ascending:false});
+    if(r.error||!r.data.length)return;
+    document.getElementById("revList").innerHTML=r.data.map(function(v){ return '<div class="rev"><div class="stars">'+"★".repeat(v.rating)+"☆".repeat(5-v.rating)+'</div><p>'+(v.body||"")+'</p><div class="who">'+(v.author||"Verified Buyer")+'</div></div>'; }).join("");
+  }catch(e){}
+}
+</script>
+</body>
+</html>

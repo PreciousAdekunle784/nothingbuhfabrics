@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Admin · Nothingbuh Fabrics</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Jost:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+<style>body{padding:0!important}.dash-side nav a{cursor:pointer}</style>
+</head>
+<body data-page="admin-page">
+<div class="dash-mobtop"><span class="serif">Nothingbuh Admin</span><button onclick="toggleAdminNav()" style="color:var(--ivory)"><svg width="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button></div>
+<div class="dash">
+  <aside class="dash-side">
+    <div class="who"><span class="serif">Nothingbuh</span><small id="adminWho">Admin</small></div>
+    <nav>
+      <a data-tab="overview" class="active">Overview</a>
+      <a data-tab="products">Products</a>
+      <a data-tab="categories">Categories</a>
+      <a data-tab="collections">Collections</a>
+      <a data-tab="orders">Orders</a>
+      <a data-tab="customers">Customers</a>
+      <a data-tab="subscribers">Subscribers</a>
+      <a data-tab="reviews">Reviews</a>
+      <a data-tab="homepage">Homepage</a>
+      <a href="/" style="margin-top:16px;color:var(--taupe)">← Back To Store</a>
+    </nav>
+  </aside>
+  <div class="dash-main" id="adminRoot"><p class="lead">Loading…</p></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

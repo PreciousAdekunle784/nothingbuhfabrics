@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Collections · Nothingbuh Fabrics</title>
+<meta name="description" content="Shop Nothingbuh Fabrics by collection — Bridal, Aso-Ebi, Occasion and Heritage.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Jost:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body data-page="collections">
+<main class="wrap" style="padding-bottom:clamp(56px,8vw,90px)">
+  <div class="page-head">
+    <div class="crumb"><a href="/">Home</a> / Collections</div>
+    <span class="eyebrow">Curated Edits</span>
+    <h1 class="serif">Our <em>Collections</em></h1>
+    <p>Fabrics grouped by the moments they're made for. Tap a collection to shop everything in it.</p>
+  </div>
+  <div class="tiles" id="colGrid" style="margin-top:30px"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+window.NBF_PAGE = async function(){
+  var cols = await NBF.DATA.collections();
+  document.getElementById("colGrid").innerHTML = cols.map(function(c){ return NBF.tileHtml(c, "/shop?collection="); }).join("");
+};
+</script>
+</body>
+</html>

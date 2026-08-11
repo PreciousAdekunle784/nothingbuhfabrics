@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Checkout · Nothingbuh Fabrics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..600&family=Jost:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body data-page="checkout">
+<main class="wrap" style="padding-bottom:clamp(56px,8vw,90px)">
+  <div class="page-head"><div class="crumb"><a href="/">Home</a> / <a href="/cart">Bag</a> / Checkout</div><h1 class="serif">Checkout</h1></div>
+  <div id="coRoot" style="margin-top:26px"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+<script>
+var DELIV=0, METHOD="lagos", PAY="transfer";
+window.NBF_PAGE=async function(){
+  var items=NBF.Cart.items();
+  if(!items.length){ document.getElementById("coRoot").innerHTML='<div class="empty"><h3>Your bag is empty</h3><a href="/shop" class="btn btn-dark" style="margin-top:14px">Shop Fabrics</a></div>'; return; }
+  var pre={};
+  if(window.sb){ try{ var u=(await sb.auth.getUser()).data.user; if(u){ pre.email=u.email; var pr=await sb.from("profiles").select("*").eq("id",u.id).single(); if(!pr.error){ pre.name=pr.data.full_name; pre.phone=pr.data.phone; } } }catch(e){} }
+  render(items, pre);
+};
+function render(items, pre){
+  var C=window.NBF_CONFIG||{};
+  DELIV = METHOD==="lagos" ? (C.DELIVERY_LAGOS||2500) : (C.DELIVERY_NATION||5000);
+  document.getElementById("coRoot").innerHTML=
+  '<div class="checkout-grid"><div>'+
+    '<form id="coForm">'+
+    '<div class="co-block"><h3><span>1</span>Contact</h3>'+
+      '<div class="field-row"><div class="field"><label>Full name</label><input name="name" required value="'+(pre.name||"")+'"></div><div class="field"><label>Phone</label><input name="phone" required value="'+(pre.phone||"")+'"></div></div>'+
+      '<div class="field"><label>Email</label><input name="email" type="email" required value="'+(pre.email||"")+'"></div></div>'+
+    '<div class="co-block"><h3><span>2</span>Delivery Address</h3>'+
+      '<div class="field"><label>Address</label><input name="address" required></div>'+
+      '<div class="field-row"><div class="field"><label>City</label><input name="city" required></div><div class="field"><label>State</label><input name="state" required value="Lagos"></div></div></div>'+
+    '<div class="co-block"><h3><span>3</span>Delivery Method</h3>'+
+      '<label class="pay-opt sel" id="m-lagos"><input type="radio" name="m" value="lagos" checked><div><b>Lagos Delivery</b><br><span style="color:var(--taupe-deep);font-size:.82rem">1–2 days · '+NBF.money(C.DELIVERY_LAGOS||2500)+'</span></div></label>'+
+      '<label class="pay-opt" id="m-nation"><input type="radio" name="m" value="nation"><div><b>Nationwide Delivery</b><br><span style="color:var(--taupe-deep);font-size:.82rem">2–5 days · '+NBF.money(C.DELIVERY_NATION||5000)+'</span></div></label></div>'+
+    '<div class="co-block"><h3><span>4</span>Payment</h3>'+
+      '<label class="pay-opt sel" id="p-transfer"><input type="radio" name="p" value="transfer" checked><div><b>Bank Transfer</b><br><span style="color:var(--taupe-deep);font-size:.82rem">We\'ll send account details to confirm your order.</span></div></label>'+
+      '<label class="pay-opt" id="p-paystack"><input type="radio" name="p" value="paystack"><div><b>Paystack</b><br><span style="color:var(--taupe-deep);font-size:.82rem">Card, transfer & USSD (activated with your keys).</span></div></label>'+
+      '<label class="pay-opt" id="p-flutterwave"><input type="radio" name="p" value="flutterwave"><div><b>Flutterwave</b><br><span style="color:var(--taupe-deep);font-size:.82rem">Card & mobile money (activated with your keys).</span></div></label></div>'+
+    '<div id="coMsg"></div>'+
+    '<button type="submit" class="btn btn-gold btn-block" style="padding:16px">Place Order</button>'+
+    '<p class="note" style="text-align:center;margin-top:12px;font-family:var(--f-util);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--taupe-deep)">You won\'t be charged until payment is confirmed.</p>'+
+    '</form></div>'+
+    '<div class="summary"><h3>Order Summary</h3><div class="co-items">'+items.map(function(it){ var sw=it.swatch&&it.swatch.indexOf("fab-")!==0?'class="sw swatch img" style="background-image:url('+it.swatch+')"':'class="sw swatch '+(it.swatch||"fab-brocade")+'"'; return '<div class="co-item"><div '+sw+'></div><div style="flex:1"><b>'+it.name+'</b><br><span style="color:var(--taupe-deep)">Qty '+it.qty+'</span></div><div>'+NBF.money(it.price*it.qty)+'</div></div>'; }).join("")+'</div>'+
+      '<div class="row" style="display:flex;justify-content:space-between;padding:6px 0"><span>Subtotal</span><span id="coSub">'+NBF.money(NBF.Cart.subtotal())+'</span></div>'+
+      '<div class="row" style="display:flex;justify-content:space-between;padding:6px 0"><span>Delivery</span><span id="coDeliv">'+NBF.money(DELIV)+'</span></div>'+
+      '<div class="row total" style="display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:8px;padding-top:14px;font-family:var(--f-util);font-weight:600"><span>Total</span><span id="coTotal">'+NBF.money(NBF.Cart.subtotal()+DELIV)+'</span></div>'+
+    '</div></div>';
+  document.querySelectorAll("input[name=m]").forEach(function(r){ r.onchange=function(){ METHOD=r.value; document.getElementById("m-lagos").classList.toggle("sel",r.value==="lagos"); document.getElementById("m-nation").classList.toggle("sel",r.value==="nation"); DELIV=METHOD==="lagos"?(C.DELIVERY_LAGOS||2500):(C.DELIVERY_NATION||5000); document.getElementById("coDeliv").textContent=NBF.money(DELIV); document.getElementById("coTotal").textContent=NBF.money(NBF.Cart.subtotal()+DELIV); }; });
+  document.querySelectorAll("input[name=p]").forEach(function(r){ r.onchange=function(){ PAY=r.value; ["transfer","paystack","flutterwave"].forEach(function(x){ document.getElementById("p-"+x).classList.toggle("sel",x===r.value); }); }; });
+  document.getElementById("coForm").onsubmit=placeOrder;
+}
+async function placeOrder(e){
+  e.preventDefault(); var f=e.target, box=document.getElementById("coMsg");
+  var btn=f.querySelector("button[type=submit]"); btn.disabled=true; btn.textContent="Placing order…";
+  var items=NBF.Cart.items(), sub=NBF.Cart.subtotal(), total=sub+DELIV;
+  var order={ customer_name:f.name.value, customer_email:f.email.value, customer_phone:f.phone.value,
+    address:f.address.value, city:f.city.value, state:f.state.value,
+    delivery_method:METHOD==="lagos"?"Lagos Delivery":"Nationwide Delivery", delivery_fee:DELIV,
+    subtotal:sub, total:total, payment_method:PAY, payment_status:"pending", status:"pending" };
+  if(!window.sb){
+    // demo mode: no backend — hand off to WhatsApp so no sale is lost
+    var msg="New order (demo)%0A"+items.map(function(i){return i.name+" x"+i.qty;}).join("%0A")+"%0ATotal: "+NBF.money(total);
+    box.innerHTML='<div class="msg ok">Demo mode: connect Supabase to store orders. Opening WhatsApp so you can still send this order…</div>';
+    setTimeout(function(){ window.open("https://wa.me/"+(window.NBF_CONFIG.WA_NUMBER||"")+"?text="+msg,"_blank"); btn.disabled=false; btn.textContent="Place Order"; },900); return false;
+  }
+  try{
+    var u=(await sb.auth.getUser()).data.user; if(u) order.user_id=u.id;
+    var r=await sb.from("orders").insert(order).select().single();
+    if(r.error) throw r.error;
+    await sb.from("order_items").insert(items.map(function(it){ return { order_id:r.data.id, product_name:it.name, price:it.price, quantity:it.qty }; }));
+    localStorage.removeItem("nbf_cart");
+    document.getElementById("coRoot").innerHTML='<div class="empty" style="padding:70px 20px"><h3>Order Placed — Thank You</h3><p style="max-width:44ch;margin:8px auto 0">Your order <b>#'+r.data.id.slice(0,8)+'</b> is in. '+(PAY==="transfer"?"We\'ll message you bank details to confirm payment.":"Complete payment to confirm your order.")+' We\'ll be in touch shortly.</p><div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap"><a href="/account" class="btn btn-dark">View My Orders</a><a href="/shop" class="btn btn-line">Keep Shopping</a></div></div>';
+    window.scrollTo(0,0);
+  }catch(err){ box.innerHTML='<div class="msg err">'+(err.message||"Could not place order. Please try again.")+'</div>'; btn.disabled=false; btn.textContent="Place Order"; }
+  return false;
+}
+</script>
+</body>
+</html>
